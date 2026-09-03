@@ -19,8 +19,16 @@ jobs:
       - name: Install dependencies
         run: npm install --omit=dev --no-audit --no-fund
 
-      - name: Apply Minecraft 26.2 protocol fixes
-        run: node patch-26.2.js
+      - name: Show installed versions
+        run: |
+          node -e "
+          const mf=require('mineflayer/package.json');
+          const mp=require('minecraft-protocol/package.json');
+          const md=require('minecraft-data/package.json');
+          console.log('mineflayer',mf.version);
+          console.log('minecraft-protocol',mp.version);
+          console.log('minecraft-data',md.version);
+          "
 
       - name: Verify dependencies
         run: |
