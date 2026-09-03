@@ -1,10 +1,14 @@
 {
   "name": "pelmeniicc-smart-minecraft-ai-bot",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "private": true,
   "main": "index.js",
+  "overrides": {
+    "minecraft-protocol": "https://github.com/Complexity-ML/node-minecraft-protocol-26.2/releases/download/complexity-26.2.3/minecraft-protocol-complexity-26.2.3.tgz"
+  },
   "dependencies": {
-    "mineflayer": "github:zkonikishi/Mineflayer#26.2",
+    "mineflayer": "https://github.com/Complexity-ML/mineflayer-26.2/releases/download/complexity-26.2.3/mineflayer-complexity-26.2.3.tgz",
+    "minecraft-protocol": "https://github.com/Complexity-ML/node-minecraft-protocol-26.2/releases/download/complexity-26.2.3/minecraft-protocol-complexity-26.2.3.tgz",
     "mineflayer-pathfinder": "2.4.5",
     "vec3": "^0.1.10"
   }
