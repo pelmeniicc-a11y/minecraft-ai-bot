@@ -18,23 +18,153 @@ jobs:
 
       - name: Clean old install
         run: |
-          rm -rf node_modules package-lock.json
+          rm -rf node_modules
+          rm -f package-lock.json
 
-      - name: Install 26.2 stack
-        run: npm install --omit=dev --no-audit --no-fund
+      - name: Install dependencies
+        run: |
+          npm install --omit=dev --no-audit --no-fund
 
-      - name: Verify actual protocol package
+      - name: Show installed versions
         run: |
           node - <<'NODE'
-          const path = require.resolve('minecraft-protocol/package.json')
-          const p = require(path)
+          const path = require('path')
 
-          console.log('minecraft-protocol path:', path)
-          console.log('minecraft-protocol version:', p.version)
+          const mfPath = require.resolve('mineflayer/package.json')
+          const mpPath = require.resolve('minecraft-protocol/package.json')
 
-          const mf = require('mineflayer/package.json')
+          const mf = require(mfPath)
+          const mp = require(mpPath)
+
+          console.log('mineflayer package:', mfPath)
           console.log('mineflayer version:', mf.version)
 
+          console.log('minecraft-protocol package:', mpPath)
+          console.log('minecraft-protocol version:', mp.version)
+          NODE
+
+      - name: Show minecraft-protocol dependency tree
+        run: |
+          npm ls minecraft-protocol || true
+
+      - name: Inspect 26.2 serverbound packet mapping
+        run: |
+          node - <<'NODE'
+          const fs = require('fs')
+          const path = require('path')
+
+          function walk(dir, out = []) {
+            if (!fs.existsSync(dir)) return out
+
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              const fullPath = path.join(dir, entry.name)
+
+              if (entry.isDirectory()) {
+                walk(fullPath, out)
+                continue
+              }
+
+              if (
+                entry.name.endsWith('.json') ||
+                entry.name.endsWith('.js')
+              ) {
+                out.push(fullPath)
+              }
+            }
+
+            return out
+          }
+
+          const searchTerms = [
+            'test_instance_block_action',
+            'packet_block_place',
+            'use_item_on',
+            'block_place'
+          ]
+
+          const files = walk('node_modules')
+
+          let matches = 0
+
+          for (const file of files) {
+            let text
+
+            try {
+              text = fs.readFileSync(file, 'utf8')
+            } catch {
+              continue
+            }
+
+            if (!searchTerms.some(term => text.includes(term))) {
+              continue
+            }
+
+            const lines = text.split('\n')
+
+            for (let i = 0; i < lines.length; i++) {
+              if (!searchTerms.some(term => lines[i].includes(term))) {
+                continue
+              }
+
+              matches++
+
+              console.log('')
+              console.log('============================================================')
+              console.log('FILE:', file)
+              console.log('LINE:', i + 1)
+              console.log('============================================================')
+
+              const start = Math.max(0, i - 8)
+              const end = Math.min(lines.length, i + 9)
+
+              for (let n = start; n < end; n++) {
+                const marker = n === i ? '>>' : '  '
+
+                console.log(
+                  marker,
+                  String(n + 1).padStart(6, ' '),
+                  lines[n]
+                )
+              }
+            }
+          }
+
+          console.log('')
+          console.log('Total matching sections:', matches)
+
+          if (matches === 0) {
+            console.log('No packet mapping strings were found.')
+          }
+          NODE
+
+      - name: Search protocol files by packet names
+        run: |
+          echo "===== test_instance_block_action ====="
+          grep -Rni \
+            --include="*.json" \
+            --include="*.js" \
+            "test_instance_block_action" \
+            node_modules 2>/dev/null || true
+
+          echo ""
+          echo "===== packet_block_place ====="
+          grep -Rni \
+            --include="*.json" \
+            --include="*.js" \
+            "packet_block_place" \
+            node_modules 2>/dev/null || true
+
+          echo ""
+          echo "===== use_item_on ====="
+          grep -Rni \
+            --include="*.json" \
+            --include="*.js" \
+            "use_item_on" \
+            node_modules 2>/dev/null || true
+
+      - name: Verify dependencies
+        run: |
+          node - <<'NODE'
           require('mineflayer')
           require('mineflayer-pathfinder')
           require('minecraft-protocol')
@@ -43,12 +173,9 @@ jobs:
           console.log('Dependencies OK')
           NODE
 
-      - name: Check for duplicate protocol copies
-        run: |
-          npm ls minecraft-protocol || true
-
       - name: Create dependency archive
-        run: tar -czf node_modules.tar.gz node_modules
+        run: |
+          tar -czf node_modules.tar.gz node_modules
 
       - name: Upload dependency archive
         uses: actions/upload-artifact@v4
