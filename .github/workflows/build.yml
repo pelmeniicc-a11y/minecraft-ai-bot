@@ -1,0 +1,38 @@
+name: Build Waifly Package
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --omit=dev --no-audit --no-fund
+
+      - name: Verify dependencies
+        run: |
+          node -e "require('mineflayer'); require('mineflayer-pathfinder'); console.log('Mineflayer OK')"
+
+      - name: Create deployment ZIP
+        run: |
+          zip -r waifly-bot.zip \
+            index.js \
+            package.json \
+            package-lock.json \
+            node_modules
+
+      - name: Upload deployment
+        uses: actions/upload-artifact@v4
+        with:
+          name: waifly-bot
+          path: waifly-bot.zip
