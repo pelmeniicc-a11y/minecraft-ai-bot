@@ -16,23 +16,36 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install dependencies
+      - name: Clean old install
+        run: |
+          rm -rf node_modules package-lock.json
+
+      - name: Install 26.2 stack
         run: npm install --omit=dev --no-audit --no-fund
 
-      - name: Show installed versions
+      - name: Verify actual protocol package
         run: |
-          node -e "
-          const mf=require('mineflayer/package.json');
-          const mp=require('minecraft-protocol/package.json');
-          const md=require('minecraft-data/package.json');
-          console.log('mineflayer',mf.version);
-          console.log('minecraft-protocol',mp.version);
-          console.log('minecraft-data',md.version);
-          "
+          node - <<'NODE'
+          const path = require.resolve('minecraft-protocol/package.json')
+          const p = require(path)
 
-      - name: Verify dependencies
+          console.log('minecraft-protocol path:', path)
+          console.log('minecraft-protocol version:', p.version)
+
+          const mf = require('mineflayer/package.json')
+          console.log('mineflayer version:', mf.version)
+
+          require('mineflayer')
+          require('mineflayer-pathfinder')
+          require('minecraft-protocol')
+          require('vec3')
+
+          console.log('Dependencies OK')
+          NODE
+
+      - name: Check for duplicate protocol copies
         run: |
-          node -e "require('mineflayer'); require('mineflayer-pathfinder'); require('vec3'); console.log('Dependencies OK')"
+          npm ls minecraft-protocol || true
 
       - name: Create dependency archive
         run: tar -czf node_modules.tar.gz node_modules
