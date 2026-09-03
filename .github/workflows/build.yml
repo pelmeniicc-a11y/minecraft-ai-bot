@@ -23,16 +23,13 @@ jobs:
         run: |
           node -e "require('mineflayer'); require('mineflayer-pathfinder'); console.log('Mineflayer OK')"
 
-      - name: Create deployment ZIP
+      - name: Create dependency archive
         run: |
-          zip -r waifly-bot.zip \
-            index.js \
-            package.json \
-            package-lock.json \
-            node_modules
+          tar -czf node_modules.tar.gz node_modules
 
       - name: Upload deployment
         uses: actions/upload-artifact@v4
         with:
-          name: waifly-bot
-          path: waifly-bot.zip
+          name: waifly-node-modules
+          path: node_modules.tar.gz
+          compression-level: 0
