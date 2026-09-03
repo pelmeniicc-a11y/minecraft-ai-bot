@@ -1,0 +1,34 @@
+name: Build Waifly Dependencies
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --omit=dev --no-audit --no-fund
+
+      - name: Verify dependencies
+        run: |
+          node -e "require('mineflayer'); require('mineflayer-pathfinder'); require('vec3'); console.log('Dependencies OK')"
+
+      - name: Create dependency archive
+        run: tar -czf node_modules.tar.gz node_modules
+
+      - name: Upload dependency archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: waifly-node-modules
+          path: node_modules.tar.gz
+          compression-level: 0
